@@ -1,0 +1,90 @@
+name: zigchain-engine
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: zigchain-engine:latest
+    container_name: zigchain-app
+
+    command: ["python", "web_ui.py"]
+
+    env_file:
+      - .env
+
+    environment:
+      WEB_UI_HOST: 0.0.0.0
+      WEB_UI_PORT: 8787
+
+    ports:
+      - "${WEB_UI_PORT:-8787}:8787"
+
+    # 🔥 REMOVE this in production (dev only)
+    # volumes:
+    #   - ./:/app
+
+    volumes:
+      - zigchain_runtime:/app/runtime
+
+    restart: unless-stopped
+
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8787/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+    networks:
+      - zigchain_net
+
+  telegram:
+    image: zigchain-engine:latest
+    container_name: zigchain-telegram
+
+    command: ["python", "tg_bot.py"]
+
+    env_file:
+      - .env
+
+    volumes:
+      - zigchain_runtime:/app/runtime
+
+    restart: unless-stopped
+
+    depends_on:
+      - app
+
+    networks:
+      - zigchain_net
+
+    profiles:
+      - telegram
+
+  cli:
+    image: zigchain-engine:latest
+    container_name: zigchain-cli
+
+    command: ["python", "main.py"]
+
+    env_file:
+      - .env
+
+    volumes:
+      - zigchain_runtime:/app/runtime
+
+    stdin_open: true
+    tty: true
+
+    networks:
+      - zigchain_net
+
+    profiles:
+      - cli
+
+volumes:
+  zigchain_runtime:
+
+networks:
+  zigchain_net:
+    driver: bridge

@@ -1,0 +1,106 @@
+{
+  "version": "1.0.0",
+  "entries": {
+    "module:bank": {
+      "title": "Bank Module",
+      "summary": "Bank handles native token movement between accounts.",
+      "notes": [
+        "Bank events describe transfer intent and amounts.",
+        "Final balance impact still depends on transaction success status.",
+        "Fee charging is tracked separately from transfer events."
+      ]
+    },
+    "message_type:MsgSend": {
+      "title": "MsgSend",
+      "summary": "MsgSend moves funds from one account to another in a direct transfer.",
+      "notes": [
+        "A MsgSend typically maps to one or more transfer events.",
+        "Sender and recipient should be read from structured tx fields when available.",
+        "If the transaction failed, emitted transfers are not finalized."
+      ]
+    },
+    "module:wasm": {
+      "title": "Wasm Module",
+      "summary": "Wasm executes smart-contract calls and emits contract-specific actions.",
+      "notes": [
+        "Contract events explain what the contract attempted to do.",
+        "Swap and liquidity actions are common contract-level behaviors.",
+        "Use tx status to separate attempted actions from finalized outcomes."
+      ]
+    },
+    "message_type:MsgExecuteContract": {
+      "title": "MsgExecuteContract",
+      "summary": "Executes a method on an existing CosmWasm contract.",
+      "notes": [
+        "Execution may emit wasm action details such as swap fields.",
+        "Actual state change is only confirmed when tx status is success.",
+        "Contract address and msg index help align actions to execution stages."
+      ]
+    },
+    "module:staking": {
+      "title": "Staking Module",
+      "summary": "Staking controls delegation lifecycle between delegators and validators.",
+      "notes": [
+        "Delegation-family actions include delegate, undelegate, and redelegate.",
+        "Reward-claim messages may appear alongside delegation activity.",
+        "Interpretation should use explicit message/action fields before assumptions."
+      ]
+    },
+    "message_type:MsgDelegate": {
+      "title": "MsgDelegate",
+      "summary": "Starts or increases delegation from a delegator to a validator.",
+      "notes": [
+        "Belongs to the staking delegation family.",
+        "Amount and participants should come from extracted tx fields when present."
+      ]
+    },
+    "message_type:MsgUndelegate": {
+      "title": "MsgUndelegate",
+      "summary": "Begins unbonding previously delegated stake.",
+      "notes": [
+        "Belongs to the staking delegation family.",
+        "Unbonding lifecycle details are chain-level semantics beyond raw tx facts."
+      ]
+    },
+    "message_type:MsgBeginRedelegate": {
+      "title": "MsgBeginRedelegate",
+      "summary": "Moves delegated stake from one validator to another.",
+      "notes": [
+        "Belongs to the staking delegation family.",
+        "Source and destination validator references should be read from tx artifacts."
+      ]
+    },
+    "module:gov": {
+      "title": "Governance Module",
+      "summary": "Governance records participation in proposal voting workflows.",
+      "notes": [
+        "Vote transactions capture the voter action within governance context.",
+        "Proposal meaning should not be guessed beyond available tx evidence."
+      ]
+    },
+    "message_type:MsgVote": {
+      "title": "MsgVote",
+      "summary": "Submits a vote for a governance proposal.",
+      "notes": [
+        "Vote option/proposal references must come from transaction fields.",
+        "Treat missing governance attributes as unknown instead of inferred."
+      ]
+    },
+    "module:ibc": {
+      "title": "IBC Module",
+      "summary": "IBC handles cross-chain packet and token transfer workflows.",
+      "notes": [
+        "IBC transactions may include client updates and packet relay events.",
+        "Cross-chain completion status may require data beyond a single tx."
+      ]
+    },
+    "message_type:MsgTransfer": {
+      "title": "IBC MsgTransfer",
+      "summary": "Initiates a token transfer over IBC channels.",
+      "notes": [
+        "Represents transfer initiation in this transaction scope.",
+        "Final remote-chain settlement is outside single-tx certainty."
+      ]
+    }
+  }
+}

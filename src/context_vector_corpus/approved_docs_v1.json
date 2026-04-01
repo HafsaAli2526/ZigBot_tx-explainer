@@ -1,0 +1,86 @@
+{
+  "version": "1.0.0",
+  "corpus": "approved_zigchain_cosmos_tx_docs",
+  "docs": [
+    {
+      "id": "tx_status_event_finality",
+      "title": "Event Emission vs Finalized State",
+      "source": "approved_docs:engine_guidance",
+      "tags": ["module:bank", "module:wasm", "module:ibc", "tx_type:bank_send", "tx_type:contract_execution"],
+      "summary": "Events can be emitted during execution even when the transaction later fails. Finalized state changes must follow transaction status.",
+      "text": "In Cosmos style execution, logs and events can appear even when a transaction fails. Finalized state should be interpreted from overall transaction status. If status is failed, transfer and contract events represent attempted execution rather than committed state changes."
+    },
+    {
+      "id": "gas_fee_on_failure",
+      "title": "Gas Charging on Failed Transactions",
+      "source": "approved_docs:engine_guidance",
+      "tags": ["module:bank", "module:wasm", "module:staking", "failure_category:out_of_gas"],
+      "summary": "Failed transactions can still consume gas and charge fees.",
+      "text": "A failed transaction may still consume gas and charge fee depending on execution progress. Gas used and fee payer should be read from explicit transaction fields. Failure does not imply zero fee."
+    },
+    {
+      "id": "wasm_execute_semantics",
+      "title": "CosmWasm Execute Semantics",
+      "source": "approved_docs:cosmwasm_execute",
+      "tags": ["module:wasm", "message_type:MsgExecuteContract", "tx_type:contract_execution", "tx_type:dex_swap"],
+      "summary": "MsgExecuteContract triggers contract-defined actions; emitted action attributes explain intent and intermediate values.",
+      "text": "MsgExecuteContract invokes logic in an existing contract. Wasm attributes such as action type, offer amount, return amount, spread, and commission describe contract execution context. These attributes are explanatory and should be combined with transaction status to determine final effects."
+    },
+    {
+      "id": "swap_spread_commission",
+      "title": "Swap Spread and Commission Interpretation",
+      "source": "approved_docs:dex_execution_notes",
+      "tags": ["module:wasm", "tx_type:dex_swap", "tx_type:swap"],
+      "summary": "Swap traces often include spread and commission fields that explain execution quality.",
+      "text": "DEX swap event fields can include offer asset, ask asset, offer amount, return amount, spread amount, and commission amount. These values help explain how execution pricing differed from ideal conversion, but final interpretation still depends on transaction success."
+    },
+    {
+      "id": "staking_delegate_family",
+      "title": "Staking Delegate Family",
+      "source": "approved_docs:staking_basics",
+      "tags": ["module:staking", "message_type:MsgDelegate", "message_type:MsgUndelegate", "message_type:MsgBeginRedelegate"],
+      "summary": "Delegate family messages cover stake allocation, unbonding initiation, and validator reassignment.",
+      "text": "Staking flows include delegate, undelegate, and begin redelegate messages. Delegate allocates stake to a validator. Undelegate starts unbonding. Begin redelegate moves stake between validators. Transaction artifacts should be used for the exact participants and amounts."
+    },
+    {
+      "id": "reward_claim_context",
+      "title": "Reward Claim in Staking Workflows",
+      "source": "approved_docs:staking_basics",
+      "tags": ["module:staking", "tx_type:reward_claim"],
+      "summary": "Reward claim messages can coexist with other staking operations in a single transaction.",
+      "text": "Staking reward claims may appear alone or together with delegation related actions. Message order and msg index fields help explain the sequence within one transaction."
+    },
+    {
+      "id": "gov_vote_scope",
+      "title": "Governance Vote Scope",
+      "source": "approved_docs:gov_basics",
+      "tags": ["module:gov", "message_type:MsgVote", "tx_type:governance_vote"],
+      "summary": "Vote transactions record participation in proposal governance and should avoid speculation beyond available fields.",
+      "text": "Governance vote transactions record a voting action for a proposal. Explanations should use explicit transaction fields for voter and option details when present, and avoid inferring proposal intent not contained in transaction artifacts."
+    },
+    {
+      "id": "ibc_transfer_initiation",
+      "title": "IBC Transfer Initiation",
+      "source": "approved_docs:ibc_transfer_notes",
+      "tags": ["module:ibc", "message_type:MsgTransfer", "tx_type:ibc_transfer"],
+      "summary": "MsgTransfer represents initiation of cross-chain token movement from the source chain transaction perspective.",
+      "text": "IBC MsgTransfer indicates transfer initiation on the source chain. Full remote chain completion may require additional packet lifecycle evidence outside a single transaction."
+    },
+    {
+      "id": "ibc_packet_relay",
+      "title": "IBC Packet Relay Lifecycle",
+      "source": "approved_docs:ibc_relay_notes",
+      "tags": ["module:ibc", "tx_type:ibc_relay"],
+      "summary": "IBC relay transactions may include receive packet and acknowledgement handling.",
+      "text": "IBC relay paths can include packet receive and acknowledgement messages. These indicate packet lifecycle handling on a given chain context. Interpretation should remain scoped to fields present in the loaded transaction."
+    },
+    {
+      "id": "message_index_linking",
+      "title": "Using Message Index to Explain Action Sequence",
+      "source": "approved_docs:engine_guidance",
+      "tags": ["module:bank", "module:wasm", "module:staking", "module:gov", "module:ibc"],
+      "summary": "msg_index helps link messages, transfers, and contract actions in execution order.",
+      "text": "When available, msg_index can align message events, transfer records, and contract actions to explain execution sequence. It provides ordering context but does not override transaction status."
+    }
+  ]
+}

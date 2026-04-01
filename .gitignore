@@ -1,0 +1,36 @@
+# Environment
+.env
+.env.*
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+# Python cache / build artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+build/
+dist/
+*.egg-info/
+*.pyc
+*.pyo
+*.pyd
+
+# Tooling caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# IDE / OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Local runtime output
+.runtime/
+*.log
+query_rejections.jsonl
+
