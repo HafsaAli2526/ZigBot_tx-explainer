@@ -1,147 +1,386 @@
 # ZigChain Transaction Reasoning Engine
 
-A CLI-based **transaction analysis and explanation system** for [ZigChain](https://zigchain.com), a Cosmos SDK blockchain. Feed it a transaction hash, and it will deterministically analyze, classify, and explain the transaction in plain English — then let you ask follow-up questions in a guarded chat session.
+A deterministic, transaction-scoped intelligence system for ZigChain / Cosmos transactions.
 
-> **Target integration:** ZigScan frontend (API mode). CLI is the development/testing interface.
+This engine does not behave like a generic AI chatbot.  
+It analyzes a single transaction using structured logic, then uses an LLM only as a controlled explanation layer.
 
-## How It Works
+---
 
-The engine processes transactions through a strict **4-layer pipeline** with an intelligent query gate:
+## 🚀 Why This Exists
 
-```
+Most blockchain “AI explainers”:
+
+- hallucinate
+- lose context
+- mix unrelated data
+- give generic answers
+
+This system is built differently:
+
+- **Facts first** — deterministic extraction and interpretation
+- **Strict scope** — answers only about the loaded transaction
+- **Controlled intelligence** — LLM explains, never decides
+- **Context-aware** — adds protocol meaning without overriding truth
+
+---
+
+## 🧠 Design Philosophy
+
+- The **transaction is the source of truth**
+- Deterministic layers extract and interpret facts
+- The **LLM is a translator, not a thinker**
+- Chat is **retrieval + explanation**, not re-analysis
+- Context (docs) is **support**, never authority
+- If context conflicts with facts → **facts win**
+
+---
+
+## ⚙️ Core Capabilities
+
+- Deterministic transaction parsing and classification
+- Fact-index-based direct answers (no LLM latency)
+- Structured explanation templates
+- Context-aware explanations via:
+  - Manifest (zero-latency module knowledge)
+  - Optional vector-doc fallback
+- Strict query scoping and rejection system
+- Session-based caching and repeat-query optimization
+- Multi-interface support (Web, CLI, Telegram)
+
+---
+
+## 🏗️ Architecture Overview
+
+```text
 TX Hash
-  │
-  ▼
-┌───────────────────────┐
-│  Layer 1 — Fetcher    │  Pulls raw data from ZigChain Cosmos RPC
-└──────────┬────────────┘
-           ▼
-┌───────────────────────┐
-│  Layer 2 — Normalizer │  Decodes events, transfers, WASM actions,
-│                       │  contract messages into structured JSON
-└──────────┬────────────┘
-           ▼
-┌───────────────────────┐
-│  Layer 3 — Interpreter│  Deterministic rules engine — classifies
-│                       │  tx type, generates warnings, scores complexity
-└──────────┬────────────┘
-           ▼
-┌───────────────────────┐
-│  Layer 4 — LLM        │  Translates structured data into a
-│  (Tiered Routing)     │  human-readable explanation (no invention)
-│                       │  simple→⚡fast | moderate→🧠std | complex→🔬powerful
-└──────────┬────────────┘
-           ▼
-┌───────────────────────┐
-│  Query Intelligence   │  TX-aware reasoning gate for follow-up Q&A
-│  Layer                │  (replaces naive keyword filtering)
-└───────────────────────┘
-```
+  → Fetcher
+  → Normalizer
+  → Interpreter
+  → Fact Index
+  → Context Keys
+  → Context Router
+  → Response Engine
+      ├── Deterministic (facts)
+      ├── Template
+      ├── Manifest Context
+      ├── Vector Context (optional)
+      └── LLM (controlled)
 
-> **Design philosophy:** The LLM is a *translator*, not a *thinker*. All factual analysis is done deterministically in Layers 2–3. The LLM reformats structured truth into natural language under strict system constraints.
+🧠 Routing Logic (Critical)
+Every user query is processed through a decision system:
 
-## Key Features
+Deterministic
 
-### Single Model
-The engine uses one selected explanation model for all requests:
-- **Default model:** `glm-4.7-flash:latest`
-- Transaction complexity is still computed deterministically for analysis quality and stats
-- Startup warmup only loads the selected production model
+Direct fact lookup
 
-### Model Warmup
-On startup, only the selected production model is preloaded so the first user query avoids a cold start without paying the cost of loading multiple models.
+No LLM call
 
-### Query Intelligence Layer
-Follow-up questions are validated through a structured reasoning pipeline:
-1. **Feature extraction** — maps question to entities (gas, signer, swap...) + intent (causal, explain, quantitative...)
-2. **TX-data validation** — checks if the question can be answered from *this specific transaction*
-3. **Dynamic prompt conditioning** — shapes LLM response quality based on question strength
-4. **Rejection logging** — blocked queries are logged to `query_rejections.jsonl` for future analysis
+Example: "Who paid gas?"
 
-## Supported Transaction Types
+Template
 
-| Category | Types |
-|---|---|
-| **DeFi** | DEX Swap, Liquidity Provision / Withdrawal |
-| **Banking** | Token Send, Multi-Send |
-| **Staking** | Delegate, Undelegate, Redelegate, Reward Claim |
-| **Governance** | Vote |
-| **IBC** | IBC Transfer, IBC Relay |
-| **Smart Contracts** | CosmWasm Execute, Instantiate, Store Code |
-| **Tokens** | Mint, Burn, Transfer |
+Structured explanation using known patterns
 
-## Quick Start
+Example: failure explanation
 
-### Prerequisites
+Manifest Context
 
-- **Python 3.11+**
-- Access to a **ZigChain RPC endpoint**
-- Access to an **Ollama-compatible LLM API** (self-hosted or remote)
+Module-level explanation (bank, wasm, staking)
 
-### Installation
+Zero latency, deterministic
 
-```bash
-# Clone the repository
-git clone <repo-url> && cd ZIG
+Vector Context (Optional)
 
-# Create and activate virtual environment
+Only triggered for deeper explanation questions
+
+Uses approved documentation only
+
+LLM
+
+Used only when necessary
+
+Receives facts + context
+
+Cannot override transaction truth
+
+Refusal
+
+Out-of-scope queries are rejected strictly
+
+🧪 Example Output
+Transaction failed due to insufficient funds.
+
+Fee payer: zig1x...
+
+Gas used: 122,045
+
+Attempted transfer: 10,000 uzig
+
+Explanation:
+
+The transaction attempted to execute a contract operation, but the account balance was lower than required.
+As a result, execution failed before any state changes were finalized.
+
+🧩 Context-Aware Reasoning (RAG Done Right)
+This system does NOT use naive global RAG.
+
+Instead:
+
+Tier 1 — Manifest Context (Deterministic)
+Local, trusted module explanations
+
+Zero latency
+
+Always aligned with protocol behavior
+
+Tier 2 — Vector Context (Optional)
+Triggered only for explanatory queries
+
+Limited to approved documentation
+
+Never overrides transaction facts
+
+Key Rule:
+Context explains the transaction — it never rewrites it.
+
+🖥️ Interfaces
+
+Interface	Entry Point
+Web UI / API	web_ui.py
+CLI REPL	main.py
+Telegram Bot	tg_bot.py
+
+⚡ Quick Start (Local)
+
+1. Setup
 python -m venv venv
-venv\Scripts\activate    # Windows
+venv\Scripts\activate   # Windows
 # source venv/bin/activate  # macOS / Linux
 
-# Install dependencies
 pip install -r requirements.txt
 
+2. Configure
+Create .env from .env.example:
 
-### Usage
+ZIGCHAIN_RPC_URL=https://zigchain-rpc.degenter.io
 
-```bash
-# Analyze a transaction directly
-python main.py <TX_HASH>
+LLM_API_URL=http://your-llm-host:11434/api/generate
+LLM_MODEL_NAME=qwen3:32b
 
-# Or start the interactive shell and load a tx later
+WEB_UI_HOST=0.0.0.0
+WEB_UI_PORT=8787
+
+3. Run
+Web UI:
+
+python web_ui.py
+CLI:
+
 python main.py
-```
+Telegram Bot:
 
-### CLI Commands
+python tg_bot.py
 
-| Command | Description |
-|---|---|
-| `/tx <hash>` | Load and analyze a new transaction |
-| `/raw` | Print the normalized JSON for the current tx |
-| `/interpret` | Print the deterministic interpretation |
-| `/stats` | Show session stats (type, complexity, model, message count) |
-| `/help` | Show help |
-| `/quit` | Exit |
-| *free text* | Ask a follow-up question about the current tx |
+---
 
-## Project Structure
+🧪 Quick Demo
+Open:
 
-```
-ZIG/
-├── main.py                 # CLI entry point, REPL loop, model warmup
-├── requirements.txt        # Python dependencies
-├── .env                    # Environment configuration (not committed)
-├── query_rejections.jsonl  # Auto-generated rejection log (training data)
+http://localhost:8787
+Paste a transaction hash
+
+Try:
+
+Why did this fail?
+Who paid gas?
+Explain this transaction
+What does this module do?
+
+---
+
+🐳 Docker Deployment
+
+Run Web UI
+docker compose up --build
+Optional
+# Telegram bot
+docker compose --profile telegram up
+
+# CLI
+docker compose --profile cli run --rm cli
+
+---
+
+📁 Project Structure
+.
+├── main.py
+├── web_ui.py
+├── tg_bot.py
+├── docker-compose.yml
+├── Dockerfile
+├── requirements.txt
 └── src/
-    ├── __init__.py
-    ├── config.py           # Loads .env, exposes settings
-    ├── fetcher.py          # Layer 1 — RPC data fetch
-    ├── normalizer.py       # Layer 2 — Raw → structured JSON
-    ├── interpreter.py      # Layer 3 — Deterministic rules engine
-    ├── llm.py              # Layer 4 — Single-model LLM translation layer
-    ├── query_engine.py     # Query Intelligence Layer (tx-aware intent gate)
-    └── chat.py             # Per-TX chat session manager
+    ├── fetcher.py
+    ├── normalizer.py
+    ├── interpreter.py
+    ├── facts.py
+    ├── fact_formatter.py
+    ├── query_engine.py
+    ├── context_router.py
+    ├── context_manifest.py
+    ├── context_keys.py
+    ├── context_vector.py
+    ├── llm.py
+    ├── chat.py
+    ├── tx_digest.py
+    ├── context_manifest_store/
+    └── context_vector_corpus/
+
+---
+
+⚠️ Limitations
+Explanations are limited to available transaction data
+
+Unknown contracts may have limited context
+
+Vector retrieval is optional and scoped
+
+Not designed for multi-transaction analytics
+
+---
+
+🚀 Future Direction
+This system is designed to evolve into:
+
+ZigChain Intelligence API Layer
+
+Explorer integrations (e.g., ZigScan)
+
+Wallet-level transaction explainability
+
+AI-powered analytics and automation
+
+---
+
+🔐 Security Notes
+Never commit .env
+
+Keep API keys and tokens private
+
+Use .env.example for shared configuration
+
+---
+
+📌 Final Note
+This is not just a tool —
+it is a transaction intelligence layer designed for real-world integration.
+
+---
+
+License
+Not yet licensed. Contact the author for usage terms.
+
+---
+
+# 🧠 SYSTEM EVOLUTION — WHAT CHANGED (IMPORTANT)
+
+---
+
+# 🔴 OLD SYSTEM (Before)
+TX → Fetch → Normalize → Interpret → LLM → Chat
+
+
+Problems:
+- LLM doing too much ❌
+- repeated computation ❌
+- slow ❌
+- weak control ❌
+- no context intelligence ❌
+
+---
+
+# 🟢 NEW SYSTEM (Now)
+TX → Deterministic Core → Fact Index → Routing → Controlled LLM
+
+
+---
+
+# 🧱 LAYER BREAKDOWN (FINAL)
+
+## 1. Fetcher
+👉 Gets raw transaction from RPC
+
+---
+
+## 2. Normalizer
+👉 Converts raw logs → structured JSON
+
+---
+
+## 3. Interpreter
+👉 Classifies:
+- tx type
+- warnings
+- complexity
+- annotations
+
+---
+
+## 4. Fact Index (🔥 BIG UPGRADE)
+
+👉 Converts everything into **directly answerable truth**
+
+Example:
+status = failed
+fee_payer = zig1...
+gas_used = 122045
+failure_reason = insufficient funds
+
+
+👉 This removes need for LLM in 70% cases
+
+---
+
+## 5. Context Layer (🔥 NEW)
+
+### Context Keys
+👉 Extract:
+- module
+- message type
+- tx type
+
+---
+
+### Manifest (Tier 1)
+👉 Deterministic explanations
+MsgExecuteContract → explanation
+
+---
+
+### Vector (Tier 2)
+👉 Only for deep explanation
+👉 Optional fallback
+
+---
+
+## 6. Query Engine (UPGRADED)
+
+👉 Not just filtering anymore
+
+It:
+- understands intent
+- checks answerability
+- routes query
+
+---
+
+## 7. Context Router (🔥 CORE INTELLIGENCE)
+
+👉 Decides:
+fact?
+template?
+context?
+llm?
+reject?
 ```
-
-## Dependencies
-
-| Package | Purpose |
-|---|---|
-| `requests` | HTTP calls to ZigChain RPC and LLM API |
-| `python-dotenv` | `.env` file loading |
-| `colorama` | Terminal colors for the CLI |
-
-## License
-
-This project is not yet licensed. Contact the author for usage terms.
