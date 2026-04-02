@@ -54,15 +54,18 @@ def _build_key_actions(normalized_data: dict, max_actions: int) -> list[dict]:
     for action in normalized_data.get("wasm_actions", []):
         if len(actions) >= max_actions:
             break
-        actions.append(
-            {
-                "kind": "wasm_action",
-                "type": action.get("type"),
-                "contract": _short_addr(action.get("contract")),
-                "status": action.get("status"),
-                "msg_index": action.get("msg_index"),
-            }
-        )
+        entry = {
+            "kind": "wasm_action",
+            "type": action.get("type"),
+            "contract": _short_addr(action.get("contract")),
+            "contract_full": action.get("contract"),
+            "status": action.get("status"),
+            "msg_index": action.get("msg_index"),
+        }
+        parsed = action.get("parsed")
+        if parsed:
+            entry["parsed"] = parsed
+        actions.append(entry)
 
     return actions
 
@@ -129,5 +132,6 @@ def build_tx_digest(
         "complexity": interpretation.get("complexity"),
         "key_actions": _build_key_actions(normalized_data, max_actions=max_actions),
         "contracts": _build_contracts(normalized_data, max_items=max_contracts),
+        "contract_params": (normalized_data.get("tx_body") or {}).get("contract_msgs", []),
     }
 

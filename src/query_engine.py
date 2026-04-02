@@ -11,6 +11,7 @@ Not a keyword filter. A structured reasoning system that:
 5. Logs rejected queries for future analysis
 """
 
+from html import entities
 import json
 import os
 from datetime import datetime, timezone
@@ -72,21 +73,23 @@ HARD_REJECT_CONCEPTS = [
 
 # Controlled entity mapping — structured, not keyword spam
 ENTITY_MAP = {
-    "gas":       ["gas", "cost", "charged", "paid", "deducted", "expensive"],
-    "fee":       ["fee", "fee amount", "tx fee", "transaction fee", "fee payer", "gas fee"],
-    "signer":    ["signer", "sender", "payer", "who sent", "who signed", "who paid", "who initiated", "who submitted"],
-    "transfer":  ["transfer", "send", "receive", "sent", "received", "move", "went", "moved"],
-    "failure":   ["fail", "error", "wrong", "broke", "break", "revert"],
-    "amount":    ["amount", "how much", "how many", "value", "total"],
-    "address":   ["address", "wallet", "account", "recipient", "destination"],
-    "sequence":  ["sequence", "nonce"],
-    "contract":  ["contract", "execute", "wasm", "smart contract", "invoke"],
-    "swap":      ["swap", "trade", "exchange", "slippage", "spread", "commission", "liquidity"],
-    "status":    ["status", "success", "succeed", "work", "go through", "confirm"],
-    "events":    ["event", "log", "emit"],
-    "staking":   ["stake", "delegate", "undelegate", "redelegate", "bond", "unbond", "validator"],
-    "governance": ["vote", "governance", "proposal"],
-    "ibc":       ["ibc", "cross-chain", "relay", "packet"],
+    "gas":           ["gas", "cost", "charged", "paid", "deducted", "expensive"],
+    "fee":           ["fee", "fee amount", "tx fee", "transaction fee", "fee payer", "gas fee"],
+    "signer":        ["signer", "sender", "payer", "who sent", "who signed", "who paid", "who initiated", "who submitted"],
+    "transfer":      ["transfer", "send", "receive", "sent", "received", "move", "went", "moved"],
+    "failure":       ["fail", "error", "wrong", "broke", "break", "revert"],
+    "amount":        ["amount", "how much", "how many", "value", "total"],
+    "address":       ["address", "wallet", "account", "recipient", "destination"],
+    "sequence":      ["sequence", "nonce"],
+    "contract":      ["contract", "execute", "wasm", "smart contract", "invoke"],
+    "swap":          ["swap", "trade", "exchange", "slippage", "spread", "commission", "liquidity"],
+    "status":        ["status", "success", "succeed", "work", "go through", "confirm"],
+    "events":        ["event", "log", "emit"],
+    "staking":       ["stake", "delegate", "undelegate", "redelegate", "bond", "unbond", "validator"],
+    "governance":    ["vote", "governance", "proposal"],
+    "ibc":           ["ibc", "cross-chain", "relay", "packet"],
+    "memo":          ["memo", "note", "message text", "annotation", "label"],
+    "fee_recipient": ["fee recipient", "who got the fee", "fee receiver", "fee collector", "who received the fee"],
 }
 
 # Intent detection based on question starters / patterns
@@ -100,7 +103,7 @@ INTENT_PATTERNS = {
     "quantitative": ["how much", "how many", "how long"],
 }
 
-DIRECT_FACT_ENTITIES = {"signer", "gas", "fee", "status", "failure"}
+DIRECT_FACT_ENTITIES = {"signer", "gas", "fee", "status", "failure", "memo"}
 
 
 # ══════════════════════════════════════════════
@@ -397,6 +400,8 @@ def _deterministic_answer(features: QuestionFeatures, fact_index: dict, ctx: Que
     transfers = fact_index.get("transfers", [])
     addresses = fact_index.get("addresses_involved", [])
     raw_event_count = ctx.tx.get("raw_event_count", 0)
+    fee_recipient = fact_index.get("fee_recipient")
+    memo = fact_index.get("memo", "")
 
     lines = []
 
@@ -443,6 +448,17 @@ def _deterministic_answer(features: QuestionFeatures, fact_index: dict, ctx: Que
                 lines.append(f"Involved addresses: {preview}, and {extra} more.")
             else:
                 lines.append(f"Involved addresses: {preview}.")
+    if "memo" in entities:
+        if memo:
+            lines.append(f"Memo: {memo}")
+        else:
+            lines.append("No memo was attached to this transaction.")
+
+    if "fee_recipient" in entities:
+        if fee_recipient:
+            lines.append(f"Fee recipient: {fee_recipient}")
+        else:
+            lines.append("Fee recipient could not be determined from this transaction's events.")
 
     if lines:
         return "\n".join(lines)
@@ -480,18 +496,17 @@ def _template_answer(features: QuestionFeatures, fact_index: dict, ctx: QueryCon
             lines.append(f"- Additional contract actions not shown: {len(contract_actions) - 6}")
         return "\n".join(lines)
 
-    if features.intent == "explain" and ctx.complexity in ("simple", "moderate"):
-        return (
-            "Transaction summary:\n"
-            f"- Status: {fact_index.get('status') or 'unknown'}\n"
-            f"- Type: {fact_index.get('tx_type') or 'unknown'}\n"
-            f"- Summary: {fact_index.get('summary') or 'n/a'}\n"
-            f"- Signer: {fact_index.get('signer') or 'unknown'}\n"
-            f"- Gas used/wanted: {fact_index.get('gas', {}).get('used', 'unknown')}/"
-            f"{fact_index.get('gas', {}).get('wanted', 'unknown')}\n"
-            f"- Transfers: {len(transfers)}\n"
-            f"- Contract actions: {len(contract_actions)}"
-        )
+#    if features.intent == "explain" and ctx.complexity in ("simple", "moderate"):        return (
+#            "Transaction summary:\n"
+#            f"- Status: {fact_index.get('status') or 'unknown'}\n"
+#            f"- Type: {fact_index.get('tx_type') or 'unknown'}\n"
+#            f"- Summary: {fact_index.get('summary') or 'n/a'}\n"
+#            f"- Signer: {fact_index.get('signer') or 'unknown'}\n"
+#            f"- Gas used/wanted: {fact_index.get('gas', {}).get('used', 'unknown')}/"
+#            f"{fact_index.get('gas', {}).get('wanted', 'unknown')}\n"
+#            f"- Transfers: {len(transfers)}\n"
+#            f"- Contract actions: {len(contract_actions)}"
+#        )
 
     return None
 

@@ -419,6 +419,7 @@ def call_llm(
             "temperature": LLM_TEMPERATURE,
             "top_p": LLM_TOP_P,
             "num_predict": LLM_MAX_TOKENS,
+            "think": False, 
         },
     }
 

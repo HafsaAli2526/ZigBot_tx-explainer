@@ -97,6 +97,7 @@ def build_fact_index(normalized_data: dict, interpretation: dict) -> dict:
             "efficiency_pct": gas.get("efficiency"),
         },
         "fee_amount": gas.get("fee"),
+        "fee_recipient": gas.get("fee_recipient"),  
         "transfers": transfer_facts,
         "contracts": {
             "addresses": contract_addresses,
@@ -107,5 +108,6 @@ def build_fact_index(normalized_data: dict, interpretation: dict) -> dict:
         "tx_type": interpretation.get("tx_type"),
         "complexity": interpretation.get("complexity"),
         "summary": interpretation.get("summary"),
+        "memo": normalized_data.get("memo", ""), 
     }
 
